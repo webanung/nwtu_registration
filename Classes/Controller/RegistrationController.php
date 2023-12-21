@@ -4,10 +4,13 @@
 
     use Doctrine\DBAL\DBALException;
     use Doctrine\DBAL\Driver\Exception;
+    use Symfony\Component\Mime\Address;
     use TYPO3\CMS\Core\Context\Context;
     use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
+    use TYPO3\CMS\Core\Mail\MailMessage;
     use TYPO3\CMS\Core\Utility\GeneralUtility;
     use TYPO3\CMS\Core\Database\ConnectionPool;
+    use TYPO3\CMS\Core\Utility\MailUtility;
     use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
     class RegistrationController extends ActionController
@@ -44,7 +47,8 @@
                 else
                 {
                     // anmeldung verschicken
-                    $to = "office@nwtu.de, j.igras@nwtu.de";
+                    $to = "office@nwtu.de";
+                    $to1 = "j.igras@nwtu.de";
 
                     $subject = "Anmeldung Lehrgang";
                     $from = "anmeldung@nwtu.de";
@@ -65,12 +69,22 @@
                         }
                     }
                     //                $header = "MIME-Version: 1.0\r\n";
-                    $header .= "From: Anmeldungsformular <$from>\r\n";
+                    //$header .= "From: Anmeldungsformular <$from>\r\n";
                     //                $header .= "Content-type: text/html; charset=utf-8\r\n";
                     // $header .= "Reply-To: $from\r\n";
                     // $header .= "Cc: $cc\r\n";  // falls an CC gesendet werden soll
                     //                $header .= "X-Mailer: PHP " . phpversion();
-                    if ( mail( $to, $subject, $msg, $header ) )
+                    $mail = GeneralUtility::makeInstance( MailMessage::class );
+                    $mail->setFrom( MailUtility::getSystemFrom() );
+                    $mail->to(
+                        new Address( $to ),
+                        new Address( $to1 )
+                    );
+                    $mail->setReplyTo( $from );
+                    $mail->subject( $subject );
+                    $mail->html( $msg );;
+                    $res = $mail->send();
+                    if ( $res )
                     {
                         $html .= "<h1>Vielen Dank f&uuml;r Ihre Anmeldung</h1><p>Wir werden uns schnellstm&ouml;glich mit Ihnen in Verbindung setzen.</p>";
                     }
